@@ -12,17 +12,22 @@ pub fn field_names(input: TokenStream) -> TokenStream {
     let table_name = name.to_string().to_lowercase();
     let fields = match is.fields {
         syn::Fields::Named(ref fields) => fields,
-        _ => panic!("FieldNames can only be derived for structs with named fields"),
+        _ => panic!("BaseModel can only be derived for structs with named fields"),
     };
-    let field_names = fields.named.iter().map(|f| &f.ident);
+    let columns = fields.named.iter().map(|f| &f.ident);
+    let length = columns.len();
     let gen = quote! {
         impl #name {
-            pub fn field_names() -> Vec<&'static str> {
-                vec![#(stringify!(#field_names)),*]
+            const COLUMN_NAMES: [&'static str; #length] = [#(stringify!(#columns)),*];
+        }
+        impl Schema for #name {
+
+            fn table_name() -> &'static str {
+                #table_name
             }
 
-            pub fn table_name() -> &'static str {
-                #table_name
+            fn column_names() -> &'static [&'static str] {
+                &Self::COLUMN_NAMES
             }
         }
     };
@@ -35,7 +40,6 @@ pub fn with_basemodel(attr: TokenStream, input: TokenStream) -> TokenStream {
     let _ = parse_macro_input!(attr as parse::Nothing);
     if let syn::Fields::Named(ref mut fields) = is.fields {
         let basemodel_fields = vec![
-            // quote! { pub id: u64 },
             quote! { pub created_at: Option<DateTime<Local>> },
             quote! { pub updated_at: Option<DateTime<Local>> },
             quote! {
