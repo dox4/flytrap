@@ -6,6 +6,7 @@ use basemodel::BaseModel;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
+use traits::Schema;
 
 // HTTP Request
 // Method Path Query Body Headers Host

@@ -1,29 +1,37 @@
-use crate::api::{error, resp};
 use crate::api::resp::{Created, FetchPaged};
 use crate::api::Result;
 use crate::{db, model::request::Request};
-use axum::Json;
 use axum::extract::Query;
+use axum::routing::{delete, put};
+use axum::Json;
 use axum::{
     extract::Path,
     routing::{get, post},
     Router,
 };
 use serde::Deserialize;
+use sql_builder::update::UpdateQuery;
 use sql_builder::{
     insert::InsertQuery, repr::ToSqlRepr, select::SelectQuery, where_clause::WhereClause,
     SqlBuilder,
 };
 
+use traits::Schema;
+use uuid::Uuid;
+
+use super::delete_by_ids;
+
 pub fn router() -> Router {
     Router::new()
         .route("/", post(make_request))
         .route("/", get(fetch_request_paged))
+        .route("/", delete(delete_by_ids::<Request>))
         .route("/:id", get(fetch_request_by_id))
+        .route("/:id", put(update_request_by_id))
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct MakeRequestArg {
+#[derive(Debug, Deserialize)]
+pub struct CreateOrUpdateRequerstArgument {
     pub name: String,
     pub method: String,
     pub path: String,
@@ -33,7 +41,25 @@ pub struct MakeRequestArg {
     pub body: Option<serde_json::Value>,
 }
 
-async fn make_request(Json(arg): Json<MakeRequestArg>) -> Result<Created> {
+impl From<CreateOrUpdateRequerstArgument> for Request {
+    fn from(arg: CreateOrUpdateRequerstArgument) -> Self {
+        Self {
+            id: uuid::Uuid::new_v4(),
+            name: arg.name,
+            method: arg.method,
+            path: arg.path,
+            query: arg.query,
+            host: arg.host,
+            headers: arg.headers,
+            body: arg.body,
+            created_at: None,
+            updated_at: None,
+            deleted_at: None,
+        }
+    }
+}
+
+async fn make_request(Json(arg): Json<CreateOrUpdateRequerstArgument>) -> Result<Created> {
     let u = uuid::Uuid::new_v4();
     let sql = InsertQuery::new(Request::table_name())
         .add_columns(
@@ -59,11 +85,10 @@ async fn make_request(Json(arg): Json<MakeRequestArg>) -> Result<Created> {
     Ok(Created { id: u })
 }
 
-pub async fn fetch_request_by_id(Path(id): Path<String>) -> Result<Request> {
-    let uuid = uuid::Uuid::parse_str(&id).map_err(|e| error::Error::BadUUID(e))?;
+pub async fn fetch_request_by_id(Path(id): Path<Uuid>) -> Result<Request> {
     let sql = SelectQuery::new(Request::table_name())
-        .add_columns(&Request::field_names())
-        .where_clause(WhereClause::equals("id", uuid).and_is_null("deleted_at"))
+        .add_columns(&Request::column_names())
+        .where_clause(WhereClause::equals("id", id).and_is_null("deleted_at"))
         .build()
         .unwrap();
     db::fetch_one::<Request>(&sql).await
@@ -94,7 +119,7 @@ pub async fn fetch_request_paged(Query(arg): Query<PageArg>) -> Result<FetchPage
     let (page, per_page) = arg.paged();
     tracing::debug!("page: {}, per_page: {}", page, per_page);
     let sql = SelectQuery::new(Request::table_name())
-        .add_columns(&Request::field_names())
+        .add_columns(Request::column_names())
         .where_clause(WhereClause::is_null("deleted_at"))
         .limit(per_page)
         .offset((page - 1) * per_page)
@@ -102,4 +127,24 @@ pub async fn fetch_request_paged(Query(arg): Query<PageArg>) -> Result<FetchPage
         .unwrap();
     let data = db::fetch_all::<Request>(&sql).await?;
     Ok(FetchPaged::new(count, data))
+}
+
+pub async fn update_request_by_id(
+    Path(id): Path<Uuid>,
+    Json(arg): Json<CreateOrUpdateRequerstArgument>,
+) -> Result<Request> {
+    let req = Request::from(arg);
+    let sql = UpdateQuery::new(Request::table_name())
+        .set_field("name", &req.name)
+        .set_field("method", &req.method)
+        .set_field("path", &req.path)
+        .set_field("query", &req.query)
+        .set_field("host", &req.host)
+        .set_field("headers", &req.headers)
+        .set_field("body", &req.body)
+        .add_where_clause(WhereClause::equals("id", id).and_is_null("deleted_at"))
+        .build()
+        .unwrap();
+    db::update_one(&sql).await?;
+    fetch_request_by_id(Path(id)).await
 }

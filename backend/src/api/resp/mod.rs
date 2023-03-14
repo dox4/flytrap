@@ -74,6 +74,23 @@ where
     }
 }
 
+#[derive(Debug, Serialize)]
+pub struct RowsAffected {
+    pub rows_affected: u64,
+}
+
+impl RowsAffected {
+    pub fn new(rows_affected: u64) -> Self {
+        Self { rows_affected }
+    }
+}
+
+impl IntoResponse for RowsAffected {
+    fn into_response(self) -> axum::response::Response {
+        Json(self).into_response()
+    }
+}
+
 fn is_ok(status: &u16) -> bool {
     *status == 200
 }

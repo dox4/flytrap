@@ -1,8 +1,5 @@
 [workspace]
-members = [
-    "backend",
-    "basemodel"
-]
+members = ["backend", "basemodel", "traits"]
 
 [package]
 name = "flytrap"

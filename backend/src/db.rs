@@ -62,3 +62,15 @@ where
         .await
         .map_err(|e| error::Error::DatabaseError(e))?)
 }
+
+pub async fn update_one(sql: &str) -> Result<()> {
+    let cnt = sqlx::query(sql)
+        .execute(db_pool())
+        .await
+        .map_err(|e| error::Error::DatabaseError(e))?
+        .last_insert_id();
+    if cnt > 1 {
+        return Err(error::Error::UnexpectedRowsAffected(1, cnt));
+    }
+    Ok(())
+}

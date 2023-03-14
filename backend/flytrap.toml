@@ -1,0 +1,14 @@
+[base]
+port = 2302
+host = "0.0.0.0"
+
+[log]
+level = "DEBUG"
+file = "/var/log/flytrap/flytrap.log"
+structured = false
+
+[db]
+db_domain = "127.0.0.1:3306"
+db_name = "flytrap"
+db_user = "flytrap"
+db_password = "flytrap"
