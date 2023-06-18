@@ -8,8 +8,8 @@ pub enum Error {
     UnexpectedRowsAffected(u64, u64),
     #[error("resource not found.")]
     NotFound,
-    // #[error("parse uuid failed: {0}")]
-    // BadUUID(#[from] uuid::Error),
+    #[error("resource created failed: {0}")]
+    CreateFailed(String),
     #[error("database error: {0}")]
     DatabaseError(#[from] sqlx::Error),
 }
@@ -18,7 +18,6 @@ impl Error {
     fn status(&self) -> u16 {
         match self {
             Self::NotFound => 404,
-            // Self::BadUUID(_) => 400,
             _ => 500,
         }
     }

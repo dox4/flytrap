@@ -1,0 +1,16 @@
+-- Add migration script here
+CREATE TABLE requests (
+	id CHAR(36) NOT NULL PRIMARY KEY,
+	name VARCHAR(255) NOT NULL,
+	method VARCHAR(10) NOT NULL,
+	path VARCHAR(255) NOT NULL,
+	query JSON NOT NULL,
+	host VARCHAR(255) NOT NULL,
+	headers JSON NOT NULL,
+	body JSON,
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	deleted_at TIMESTAMP NULL DEFAULT NULL,
+	INDEX requests_name_index (name),
+	INDEX deleted_at_index (deleted_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;

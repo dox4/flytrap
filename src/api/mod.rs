@@ -1,13 +1,9 @@
-pub mod req;
-pub mod handler;
-pub mod error;
-pub mod resp;
+pub(crate) mod error;
+pub(crate) mod resp;
+#[macro_use]
+pub(crate) mod v1;
 
-pub type Result<T> = anyhow::Result<T, error::Error>;
-
-use axum::{Router, Server};
-
-use crate::config;
+use axum::Router;
 use tower::ServiceBuilder;
 use tower_http::{
     request_id::MakeRequestUuid,
@@ -16,7 +12,9 @@ use tower_http::{
     ServiceBuilderExt,
 };
 
-pub async fn run_server() -> anyhow::Result<()> {
+pub(crate) type Result<T> = anyhow::Result<T, error::Error>;
+
+pub(crate) fn router() -> Router {
     // layers
     let mru = MakeRequestUuid {};
     // here I use the code from the tower-http example:
@@ -36,16 +34,10 @@ pub async fn run_server() -> anyhow::Result<()> {
         ServiceBuilder::new().layer(TimeoutLayer::new(std::time::Duration::from_secs(10)));
     let compress = ServiceBuilder::new().layer(tower_http::compression::CompressionLayer::new());
 
-    // information from global configuration
-    let base = &config::global_config().base;
-    let addr = format!("{}:{}", base.host, base.port).parse()?;
-
     // router
-    let app = Router::new()
-        .nest("/api", handler::router())
+    Router::new()
+        .nest("/api/v1", v1::router())
         .layer(request_id)
         .layer(timeout)
-        .layer(compress);
-    Server::bind(&addr).serve(app.into_make_service()).await?;
-    Ok(())
+        .layer(compress)
 }
