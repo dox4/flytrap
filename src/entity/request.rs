@@ -1,9 +1,9 @@
 use crate::api::resp::FetchOne;
 use axum::response::IntoResponse;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+use sqlx::types::uuid::fmt::Hyphenated;
 use sqlx::FromRow;
 use sqlx_crud::{add_timed_fields, SqlxCrud};
-use uuid::Uuid;
 
 // HTTP Request
 // +----------+----------------------+-----------+
@@ -22,9 +22,9 @@ use uuid::Uuid;
 // +---------------------------------------------+
 
 #[add_timed_fields]
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow, SqlxCrud, Default)]
+#[derive(Debug, Clone, Serialize, FromRow, SqlxCrud, Default)]
 pub(crate) struct Request {
-    pub(crate) id: Uuid,
+    pub(crate) id: Hyphenated,
     pub(crate) name: String,
     pub(crate) method: String,
     pub(crate) path: String,

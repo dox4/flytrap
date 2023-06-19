@@ -4,26 +4,26 @@ use axum::{body, response::IntoResponse, Json};
 use serde::Serialize;
 use uuid::Uuid;
 
-#[derive(Debug, Serialize)]
-pub(crate) struct Created {
-    pub(crate) id: Uuid,
-}
+// #[derive(Debug, Serialize)]
+// pub(crate) struct Created {
+//     pub(crate) id: Uuid,
+// }
 
-impl Into<Created> for Uuid {
-    fn into(self) -> Created {
-        Created { id: self }
-    }
-}
+// impl Into<Created> for Uuid {
+//     fn into(self) -> Created {
+//         Created { id: self }
+//     }
+// }
 
-impl IntoResponse for Created {
-    fn into_response(self) -> axum::response::Response {
-        let body = body::boxed(body::Full::from(serde_json::to_string(&self).unwrap()));
-        axum::response::Response::builder()
-            .status(201)
-            .body(body)
-            .unwrap()
-    }
-}
+// impl IntoResponse for Created {
+//     fn into_response(self) -> axum::response::Response {
+//         let body = body::boxed(body::Full::from(serde_json::to_string(&self).unwrap()));
+//         axum::response::Response::builder()
+//             .status(201)
+//             .body(body)
+//             .unwrap()
+//     }
+// }
 
 #[derive(Debug, Serialize)]
 pub(crate) struct BatchCreated {
@@ -77,18 +77,14 @@ pub(crate) struct FetchPaged<T: Serialize> {
     pub(crate) data: Vec<T>,
 }
 
-impl<T> FetchPaged<T>
+impl<T> Into<FetchPaged<T>> for (i64, Vec<T>)
 where
     T: Serialize,
 {
-    pub(crate) fn new(total: i64, data: Vec<T>) -> Self {
-        Self { total, data }
-    }
-
-    pub(crate) fn empty() -> Self {
-        Self {
-            total: 0,
-            data: Vec::new(),
+    fn into(self) -> FetchPaged<T> {
+        FetchPaged {
+            total: self.0,
+            data: self.1,
         }
     }
 }
