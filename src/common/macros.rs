@@ -35,6 +35,7 @@ macro_rules! create {
 macro_rules! retrieve {
     ($type:ty) => {
         async fn retrieve(Path(id): Path<Uuid>) -> Result<Request> {
+            tracing::info!("retrieving");
             <$type>::by_id(db::db_pool(), id.hyphenated())
                 .await?
                 .ok_or_else(|| crate::api::error::Error::NotFound)
