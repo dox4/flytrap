@@ -75,25 +75,6 @@ impl QueryWith<Request> for RequestQuery {
     }
 }
 
-// async fn retrieve_list(Query(request): Query<RequestQuery>) -> Result<FetchPaged<Request>> {
-//     let page = request.page.unwrap_or(1);
-//     let per_page = request.per_page.unwrap_or(10);
-//     let offset = (page - 1) * per_page;
-//     let mut query = sql_builder::SqlBuilder::select_from(Request::table_name());
-//     query.offset(offset).limit(page);
-//     request.query_with(&mut query);
-//     let count_sql = query.clone().count("0").sql().unwrap();
-//     let count: i64 = sqlx::query(&count_sql)
-//         .fetch_one(db::db_pool())
-//         .await?
-//         .get(0);
-//     let data_sql = query.sql().unwrap();
-//     let list = sqlx::query_as::<_, Request>(&data_sql)
-//         .fetch_all(db::db_pool())
-//         .await?;
-//     Ok((count, list).into())
-// }
-
 router!();
 create!(RequestRequest, Request);
 retrieve!(Request);

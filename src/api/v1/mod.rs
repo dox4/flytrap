@@ -1,8 +1,11 @@
 use axum::Router;
+pub(crate) mod execution;
 pub(crate) mod request;
 
 pub(crate) fn router() -> Router {
-    Router::new().nest("/request", request::router())
+    Router::new()
+        .nest("/request", request::router())
+        .nest("/execution", execution::router())
 }
 
 trait UpdateWith<T: Sized> {

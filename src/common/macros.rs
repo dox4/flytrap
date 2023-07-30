@@ -20,7 +20,7 @@ macro_rules! create {
                 .await
                 .map_err(|e| {
                     tracing::error!("created failed: {}", e);
-                    crate::api::error::Error::CreateFailed(id.clone().to_string())
+                    crate::api::error::Error::CreateFailed(e.to_string())
                 })?
                 .rows_affected()
                 .expect(1)?;
@@ -34,7 +34,7 @@ macro_rules! create {
 #[macro_export]
 macro_rules! retrieve {
     ($type:ty) => {
-        async fn retrieve(Path(id): Path<Uuid>) -> Result<Request> {
+        async fn retrieve(Path(id): Path<Uuid>) -> Result<$type> {
             tracing::info!("retrieving");
             <$type>::by_id(db::db_pool(), id.hyphenated())
                 .await?
